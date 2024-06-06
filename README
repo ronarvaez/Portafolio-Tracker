@@ -17,12 +17,22 @@ Next steps: Meter prioridad
 Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
 Tres meses atrás
 
+--arriba y abajo se pueden juntar--
+
 --Query CKA Portfolio vs BD Base City--
 --Resultado: Cantidad de shops por BD y su tag de Dv
 WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
 Usa BD Org como tabla offline
 Next steps: Meter prioridad
 Actualización: Mensual -Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
+Tres meses atrás
+
+
+--SME Portafolio x City--
+WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
+Usa BD Org como tabla offline
+Next steps: Meter prioridad
+Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
 Tres meses atrás
 
 
