@@ -1,0 +1,28 @@
+PORTAFOLIO TRACKER
+
+--QUERY CKA SHOP STATUS--
+WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
+No usa BD Org (En un futuro si)
+No usa tablas offline
+Corregir Service Suspension 
+Modificar query suspención a nueva versión
+Expandir a meses atrás
+Actualización: No requiere
+
+
+--QUERY CKA Portafolio vs City Base--
+WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
+Usa BD Org como tabla offline
+Next steps: Meter prioridad
+Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
+Tres meses atrás
+
+--Query CKA Portfolio vs BD Base City--
+--Resultado: Cantidad de shops por BD y su tag de Dv
+WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
+Usa BD Org como tabla offline
+Next steps: Meter prioridad
+Actualización: Mensual -Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
+Tres meses atrás
+
+
