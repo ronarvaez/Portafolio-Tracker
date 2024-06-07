@@ -36,6 +36,13 @@ Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ulti
 Tres meses atrás
 
 --SME Shop Status Week--
+--week
+WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
+No usa BD Org (En un futuro si)
+No usa tablas offline
+
+--SME Shop Status Month--
+--month
 WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
 No usa BD Org (En un futuro si)
 No usa tablas offline
