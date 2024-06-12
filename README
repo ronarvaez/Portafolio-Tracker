@@ -1,54 +1,17 @@
 PORTAFOLIO TRACKER
 
---QUERY CKA SHOP STATUS--
-WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
-No usa BD Org (En un futuro si)
-No usa tablas offline
-Corregir Service Suspension 
-Modificar query suspención a nueva versión
-Expandir a meses atrás
-Actualización: No requiere
-
-
---QUERY CKA Portafolio vs City Base--
-WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
-Usa BD Org como tabla offline
-Next steps: Meter prioridad
-Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
-Tres meses atrás
-
---arriba y abajo se pueden juntar--
-
---Query CKA Portfolio vs BD Base City--
---Resultado: Cantidad de shops por BD y su tag de Dv
-WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
-Usa BD Org como tabla offline
-Next steps: Meter prioridad
-Actualización: Mensual -Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
-Tres meses atrás
-
-
 --SME Portafolio x City--
-WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' --Mensual
-Usa BD Org como tabla offline
+WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]' -- Aceleración automática -- Agrupado por Mes
+AND DAY(concat_ws('-', year, month, day)) > 25  --Toma los últimos días del mes
+Actualización: Automática 
+No usa tablas offline
 Next steps: Meter prioridad
-Actualización: Mensual --Cargar BD Org del mes--Cada fin de mes cambiar al ultimo día de mes
-Tres meses atrás
 
--SME Shop Status Daily--
---day
-WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
-No usa BD Org (En un futuro si)
-No usa tablas offline
 
---SME Shop Status Week--
---week
+--SME Shop Status Daily--
 WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
-No usa BD Org (En un futuro si)
+Se agrupa en Data E semanal y mensual
+Permanent Suspenden no aculativo
 No usa tablas offline
+Actualización: Automática
 
---SME Shop Status Month--
---month
-WHERE concat_ws('-', year, month, day) BETWEEN '2024-05-01' AND '$[YYYY-MM-DD - 2D]'
-No usa BD Org (En un futuro si)
-No usa tablas offline
