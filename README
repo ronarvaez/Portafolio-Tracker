@@ -3,8 +3,8 @@ PORTAFOLIO TRACKER
 --SME Portafolio x City--
 WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]' -- Aceleración automática -- Agrupado por Mes
 AND DAY(concat_ws('-', year, month, day)) > 25  --Toma los últimos días del mes
-Actualización: Automática 
 No usa tablas offline
+Actualización: Automática 
 Next steps: Meter prioridad
 
 
@@ -15,3 +15,8 @@ Permanent Suspenden no aculativo
 No usa tablas offline
 Actualización: Automática
 
+--SME Shops por BD Area--
+WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]' 
+Fecha más reciente
+No usa tablas offline
+Actualización: Automática
