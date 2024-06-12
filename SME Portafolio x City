@@ -1,352 +1,552 @@
 SELECT 
-a.MONTH_
+a.month_
 ,a.country
 ,a.city
-,a.bds_x_city
-,a.shops_x_city
-,a.avg_shops_bd_x_city
-,a.bds_over_dv
-,a.bds_under_dv
-,a.bds_on_dv
-,a.p_over_dv
-,a.p_under_dv
-,a.p_on_dv
+,a.bd_area_id
+,a.bd_area_owner
+,a.shops_x_bd_area
 
-,b.correct_bd_area_owner
-,b.shops_x_bd
-,b.MAS_Promedio40
-,b.MENOS_Promedio40
-,b.PROMEDIO
-,b.dv_up_
-,b.dv_down_
-FROM(
+,b.areas_x_bd
+
+,c.shops_x_bd_total
+,c.shops_x_city
+,c.bds_x_city
+,c.avg_shops_x_bd_x_city
+
+,c.lim_superior
+,c.lim_inferior
+
+,c.over_range
+,c.under_range
+,c.on_range
+
+,d.bds_over_range
+,d.bds_under_range
+,d.bds_on_range
+,d.p_over_range
+,d.p_under_range
+,d.p_on_range
+
+FROM (   
     SELECT 
-    a.MONTH_
+    MONTH(a.stat_date) AS month_
     ,a.country
     ,a.city
-    ,ROUND(AVG(a.bds_x_city),2) AS bds_x_city
-    ,ROUND(AVG(a.shops_x_city),2) AS shops_x_city
-    ,ROUND(AVG(a.avg_shops_bd_x_city),2) AS avg_shops_bd_x_city
-    ,ROUND(SUM(a.MAS_Promedio40),2) AS bds_over_dv
-    ,ROUND(SUM(a.MENOS_Promedio40),2) AS bds_under_dv
-    ,ROUND(SUM(a.PROMEDIO),2) AS bds_on_dv
-    ,ROUND((SUM(a.MAS_Promedio40)/AVG(a.bds_x_city)),2) AS p_over_dv
-    ,ROUND((SUM(a.MENOS_Promedio40)/AVG(a.bds_x_city)),2) AS p_under_dv
-    ,ROUND((SUM(a.PROMEDIO)/AVG(a.bds_x_city)),2) AS p_on_dv
-    ,ROUND(AVG(a.dv_up_)) AS dv_up_
-    ,ROUND(AVG(a.dv_down_)) AS dv_down_
+    ,a.bd_area_id
+    ,a.bd_area_owner
+    ,COUNT(DISTINCT(a.shop_id)) AS shops_x_bd_area
+    FROM (
+        SELECT DISTINCT
+        concat_ws('-', year, month, day) AS stat_date
+        ,country_code AS country
+        ,city_id
+        ,city_name AS city
+        ,district_id AS business_area_id
+        --,district_name AS business_area_name
+        ,area_id AS bd_area_id
+        ,area_name AS bd_area_name
+        ,shop_id
+        ,shop_name
+        ,priority
+        ,area_maintainer AS bd_area_owner
+        ,bd_user_name_extract AS shop_assigned_bd
+        ,null as test
+        FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+        WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+        --Filtro de omitir primeros días del mes por cambios
+        AND DAY(concat_ws('-', year, month, day)) > 25
+        AND country_code IN ('MX','CO','CR','PE')
+        --Filtro de Firmados
+        AND is_didi_sign = 1
+        -- Filtro de KA Type
+        AND IF(
+            is_dark_kitchen = 1
+            ,'DK'
+            ,IF(
+                business_type = 3,
+                'Groceries'
+                ,IF(
+                    ka_type = 'normal'
+                    ,'SME'
+                    ,UPPER(ka_type)
+                )
+            ) 
+        ) = 'SME'
+        --Filtro BD asignado = BD Area Owner
+        AND bd_user_name_extract = area_maintainer
+        --Filtro de Prioridades
+        AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+    ) AS a
+    JOIN(
+        SELECT DISTINCT
+        a.stat_date
+        ,a.country_code AS country
+        ,a.bd
+        FROM (
+            SELECT  
+            concat_ws('-', year, month, day) AS stat_date
+            ,country_code
+            ,id
+            ,user_id
+            ,username AS bd
+            ,full_name
+            ,IF(
+                coordinator = ''
+                ,superior
+                ,coordinator
+            ) AS bdm
+            FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+            WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND country_code IN ('MX','CO','CR','PE')
+            AND user_status NOT IN (1,4,6)
+            AND job_role IN (2,4)
+        ) AS a
+    ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+    GROUP BY MONTH(a.stat_date),a.country,a.city,a.bd_area_id,a.bd_area_owner
+) AS a
+
+JOIN(
+    SELECT 
+    MONTH(a.stat_date) AS month_
+    ,a.country
+    ,a.city
+    ,a.bd_area_owner
+    ,COUNT(DISTINCT(a.bd_area_id)) AS areas_x_bd
+    FROM (
+        SELECT DISTINCT
+        concat_ws('-', year, month, day) AS stat_date
+        ,country_code AS country
+        ,city_id
+        ,city_name AS city
+        ,district_id AS business_area_id
+        --,district_name AS business_area_name
+        ,area_id AS bd_area_id
+        ,area_name AS bd_area_name
+        ,shop_id
+        ,shop_name
+        ,priority
+        ,area_maintainer AS bd_area_owner
+        ,bd_user_name_extract AS shop_assigned_bd
+        FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+        WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+        --Filtro de omitir primeros días del mes por cambios
+        AND DAY(concat_ws('-', year, month, day)) > 25
+        AND country_code IN ('MX','CO','CR','PE')
+        --Filtro de Firmados
+        AND is_didi_sign = 1
+        -- Filtro de KA Type
+        AND IF(
+            is_dark_kitchen = 1
+            ,'DK'
+            ,IF(
+                business_type = 3,
+                'Groceries'
+                ,IF(
+                    ka_type = 'normal'
+                    ,'SME'
+                    ,UPPER(ka_type)
+                )
+            ) 
+        ) = 'SME'
+        --Filtro BD asignado = BD Area Owner
+        AND bd_user_name_extract = area_maintainer
+        --Filtro de Prioridades
+        AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+    ) AS a
+    JOIN(
+        SELECT DISTINCT
+        a.stat_date
+        ,a.country_code AS country
+        ,a.bd
+        FROM (
+            SELECT  
+            concat_ws('-', year, month, day) AS stat_date
+            ,country_code
+            ,id
+            ,user_id
+            ,username AS bd
+            ,full_name
+            ,IF(
+                coordinator = ''
+                ,superior
+                ,coordinator
+            ) AS bdm
+            FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+            WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND country_code IN ('MX','CO','CR','PE')
+            AND user_status NOT IN (1,4,6)
+            AND job_role IN (2,4)
+        ) AS a
+    ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+    GROUP BY MONTH(a.stat_date),a.country,a.city,a.bd_area_owner
+) AS b ON a.month_ = b.month_ AND a.country = b.country AND a.city = b.city AND a.bd_area_owner = b.bd_area_owner
+
+JOIN(
+    SELECT 
+    a.month_
+    ,a.country
+    ,a.city
+    ,a.bd_area_owner
+    ,a.shops_x_bd_total
+    ,b.shops_x_city
+    ,b.bds_x_city
+    ,b.avg_shops_x_bd_x_city
+    ,b.lim_superior
+    ,b.lim_inferior
+
+    ,IF(a.shops_x_bd_total > b.lim_superior,1,0) AS over_range
+    ,IF(a.shops_x_bd_total < b.lim_inferior,1,0) AS under_range
+    ,IF(a.shops_x_bd_total >= b.lim_inferior AND a.shops_x_bd_total <= b.lim_superior,1,0) on_range
 
     FROM (
         SELECT 
-        MONTH(a.stat_date) AS MONTH_
+        MONTH(a.stat_date) AS month_
         ,a.country
         ,a.city
-        ,a.correct_bd_area_owner
-        ,a.shops_x_bd
-        ,b.bds_x_city
-        ,b.shops_x_city
-        ,b.avg_shops_bd_x_city
-
-        ,IF(a.shops_x_bd > (b.avg_shops_bd_x_city*1.4),1,0) AS MAS_Promedio40
-        ,IF(a.shops_x_bd < (b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4)),1,0) AS MENOS_Promedio40
-        ,IF(a.shops_x_bd >= (b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4)) AND a.shops_x_bd <= (b.avg_shops_bd_x_city*1.4),1,0) PROMEDIO
-
-        ,b.avg_shops_bd_x_city*1.4 AS dv_up_
-        ,b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4) AS dv_down_
-        FROM
-            (
-            SELECT
-            a.stat_date
-            ,a.country
-            ,a.city
-            ,b.correct_bd_area_owner
-            ,COUNT(a.shop_id) AS shops_x_bd
-            FROM (
-                SELECT
-                concat_ws('-', year, month, day) AS stat_date
-                ,country_code AS country
-                ,city_id
-                ,city_name AS city
-                ,district_id AS business_area_id
-                ,district_name AS business_area_name
-                ,area_id AS bd_area_id
-                ,area_name AS bd_area_name
-                ,shop_id
-                ,shop_name
+        ,a.bd_area_owner
+        ,COUNT(DISTINCT(a.shop_id)) AS shops_x_bd_total
+        FROM (
+            SELECT DISTINCT
+            concat_ws('-', year, month, day) AS stat_date
+            ,country_code AS country
+            ,city_id
+            ,city_name AS city
+            ,district_id AS business_area_id
+            --,district_name AS business_area_name
+            ,area_id AS bd_area_id
+            ,area_name AS bd_area_name
+            ,shop_id
+            ,shop_name
+            ,priority
+            ,area_maintainer AS bd_area_owner
+            ,bd_user_name_extract AS shop_assigned_bd
+            FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+            WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+            --Filtro de omitir primeros días del mes por cambios
+            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND country_code IN ('MX','CO','CR','PE')
+            --Filtro de Firmados
+            AND is_didi_sign = 1
+            -- Filtro de KA Type
+            AND IF(
+                is_dark_kitchen = 1
+                ,'DK'
                 ,IF(
-                    is_dark_kitchen = 1
-                    ,'DK'
+                    business_type = 3,
+                    'Groceries'
                     ,IF(
-                        business_type = 3,
-                        'Groceries'
-                        ,IF(
-                            ka_type = 'normal'
-                            ,'SME'
-                            ,UPPER(ka_type)
-                        )
-                    ) 
-                ) AS ka_type
-                ,area_maintainer AS bd_area_owner
-                ,bd_user_name_extract AS shop_assigned_bd
-                FROM soda_international_dwm.dwm_bizopp_wide_d_whole
-                WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
-                AND country_code IN ('MX','CO','CR','PE')
-                --Filtro de Firmados
-                AND is_didi_sign = 1
-                -- Filtro de KA Type
-                AND IF(
-                    is_dark_kitchen = 1
-                    ,'DK'
-                    ,IF(
-                        business_type = 3,
-                        'Groceries'
-                        ,IF(
-                            ka_type = 'normal'
-                            ,'SME'
-                            ,UPPER(ka_type)
-                        )
-                    ) 
-                ) = 'SME'
-                --Filtro de Prioridades
-                AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
-            ) AS a
-
-            JOIN (              
-                --Solo las áreas que tenemos identificadas
-                SELECT
-                country
-                ,CONCAT("bdArea|",SUBSTR(bd_area_id, 2)) as bd_area_id
-                ,correct_bd_area_owner
-                FROM dp_det_data.bd_area_owner_sme_202406   --Tabla Offine
-            ) AS b
-            ON a.country = b.country AND a.bd_area_id = b.bd_area_id
-            GROUP BY a.stat_date,a.country,a.city,b.correct_bd_area_owner
-        ) AS a 
-        LEFT JOIN(
-            SELECT
+                        ka_type = 'normal'
+                        ,'SME'
+                        ,UPPER(ka_type)
+                    )
+                ) 
+            ) = 'SME'
+            --Filtro BD asignado = BD Area Owner
+            AND bd_user_name_extract = area_maintainer
+            --Filtro de Prioridades
+            AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+        ) AS a
+        JOIN(
+            SELECT DISTINCT
             a.stat_date
-            ,a.country
-            ,a.city
-            ,COUNT(DISTINCT(b.correct_bd_area_owner)) AS bds_x_city
-            ,COUNT(a.shop_id) AS shops_x_city
-            ,COUNT(a.shop_id)/COUNT(DISTINCT(b.correct_bd_area_owner)) AS avg_shops_bd_x_city
+            ,a.country_code AS country
+            ,a.bd
             FROM (
-                SELECT
+                SELECT  
                 concat_ws('-', year, month, day) AS stat_date
-                ,country_code AS country
-                ,city_id
-                ,city_name AS city
-                ,district_id AS business_area_id
-                ,district_name AS business_area_name
-                ,area_id AS bd_area_id
-                ,area_name AS bd_area_name
-                ,shop_id
-                ,shop_name
+                ,country_code
+                ,id
+                ,user_id
+                ,username AS bd
+                ,full_name
                 ,IF(
-                    is_dark_kitchen = 1
-                    ,'DK'
-                    ,IF(
-                        business_type = 3,
-                        'Groceries'
-                        ,IF(
-                            ka_type = 'normal'
-                            ,'SME'
-                            ,UPPER(ka_type)
-                        )
-                    ) 
-                ) AS ka_type
-                ,area_maintainer AS bd_area_owner
-                ,bd_user_name_extract AS shop_assigned_bd
-                FROM soda_international_dwm.dwm_bizopp_wide_d_whole
-                WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
+                    coordinator = ''
+                    ,superior
+                    ,coordinator
+                ) AS bdm
+                FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+                WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                AND DAY(concat_ws('-', year, month, day)) > 25
                 AND country_code IN ('MX','CO','CR','PE')
-                --Filtro de Firmados
-                AND is_didi_sign = 1
-                -- Filtro de KA Type
-                AND IF(
-                    is_dark_kitchen = 1
-                    ,'DK'
-                    ,IF(
-                        business_type = 3,
-                        'Groceries'
-                        ,IF(
-                            ka_type = 'normal'
-                            ,'SME'
-                            ,UPPER(ka_type)
-                        )
-                    ) 
-                ) = 'SME'
-                --Filtro de Prioridades
-                AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+                AND user_status NOT IN (1,4,6)
+                AND job_role IN (2,4)
             ) AS a
-
-            JOIN (              
-                --Solo las áreas que tenemos identificadas
-                SELECT
-                country
-                ,CONCAT("bdArea|",SUBSTR(bd_area_id, 2)) as bd_area_id
-                ,correct_bd_area_owner
-                FROM dp_det_data.bd_area_owner_sme_202406   --Tabla Offine
-            ) AS b
-            ON a.country = b.country AND a.bd_area_id = b.bd_area_id
-            GROUP BY a.stat_date,a.country,a.city
-        ) AS b ON a.stat_date = b.stat_date AND a.country = b.country AND a.city = b.city
+        ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+        GROUP BY MONTH(a.stat_date),a.country,a.city,a.bd_area_owner
     ) AS a
-    GROUP BY a.MONTH_,a.country,a.city
-) AS a
-LEFT JOIN(
+    JOIN(
+        SELECT 
+        MONTH(a.stat_date) AS month_
+        ,a.country
+        ,a.city
+        ,COUNT(DISTINCT(a.shop_id)) AS shops_x_city
+        ,COUNT(DISTINCT(a.bd_area_owner)) AS bds_x_city
+        ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner)) AS avg_shops_x_bd_x_city
+
+        ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))*1.4 AS lim_superior
+        ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))-(COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))*0.4) AS lim_inferior
+
+        FROM (
+            SELECT DISTINCT
+            concat_ws('-', year, month, day) AS stat_date
+            ,country_code AS country
+            ,city_id
+            ,city_name AS city
+            ,district_id AS business_area_id
+            --,district_name AS business_area_name
+            ,area_id AS bd_area_id
+            ,area_name AS bd_area_name
+            ,shop_id
+            ,shop_name
+            ,priority
+            ,area_maintainer AS bd_area_owner
+            ,bd_user_name_extract AS shop_assigned_bd
+            FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+            WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+            --Filtro de omitir primeros días del mes por cambios
+            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND country_code IN ('MX','CO','CR','PE')
+            --Filtro de Firmados
+            AND is_didi_sign = 1
+            -- Filtro de KA Type
+            AND IF(
+                is_dark_kitchen = 1
+                ,'DK'
+                ,IF(
+                    business_type = 3,
+                    'Groceries'
+                    ,IF(
+                        ka_type = 'normal'
+                        ,'SME'
+                        ,UPPER(ka_type)
+                    )
+                ) 
+            ) = 'SME'
+            --Filtro BD asignado = BD Area Owner
+            AND bd_user_name_extract = area_maintainer
+            --Filtro de Prioridades
+            AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+        ) AS a
+        JOIN(
+            SELECT DISTINCT
+            a.stat_date
+            ,a.country_code AS country
+            ,a.bd
+            FROM (
+                SELECT  
+                concat_ws('-', year, month, day) AS stat_date
+                ,country_code
+                ,id
+                ,user_id
+                ,username AS bd
+                ,full_name
+                ,IF(
+                    coordinator = ''
+                    ,superior
+                    ,coordinator
+                ) AS bdm
+                FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+                WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND country_code IN ('MX','CO','CR','PE')
+                AND user_status NOT IN (1,4,6)
+                AND job_role IN (2,4)
+            ) AS a
+        ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+        GROUP BY MONTH(a.stat_date),a.country,a.city
+    ) AS b ON a.month_ = b.month_ AND a.country = b.country AND a.city = b.city
+) AS c ON a.month_ = c.month_ AND a.country = c.country AND a.city = c.city AND a.bd_area_owner = c.bd_area_owner
+
+JOIN(
     SELECT 
-    MONTH(a.stat_date) AS MONTH_
+    a.month_
     ,a.country
     ,a.city
-    ,a.correct_bd_area_owner
-    ,a.shops_x_bd
-    ,b.bds_x_city
-    ,b.shops_x_city
-    ,b.avg_shops_bd_x_city
 
-    ,IF(a.shops_x_bd > (b.avg_shops_bd_x_city*1.4),1,0) AS MAS_Promedio40
-    ,IF(a.shops_x_bd < (b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4)),1,0) AS MENOS_Promedio40
-    ,IF(a.shops_x_bd >= (b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4)) AND a.shops_x_bd <= (b.avg_shops_bd_x_city*1.4),1,0) PROMEDIO
+    ,SUM(a.over_range) AS bds_over_range
+    ,SUM(a.under_range) AS bds_under_range
+    ,SUM(a.on_range) AS bds_on_range
 
-    ,b.avg_shops_bd_x_city*1.4 AS dv_up_
-    ,b.avg_shops_bd_x_city-(b.avg_shops_bd_x_city*0.4) AS dv_down_
-    FROM
-        (
-        SELECT
-        a.stat_date
+    ,SUM(a.over_range)/AVG(a.bds_x_city) AS p_over_range
+    ,SUM(a.under_range)/AVG(a.bds_x_city) AS p_under_range
+    ,SUM(a.on_range)/AVG(a.bds_x_city) AS p_on_range
+
+    FROM (
+        SELECT 
+        a.month_
         ,a.country
         ,a.city
-        ,b.correct_bd_area_owner
-        ,COUNT(a.shop_id) AS shops_x_bd
-        FROM (
-            SELECT
-            concat_ws('-', year, month, day) AS stat_date
-            ,country_code AS country
-            ,city_id
-            ,city_name AS city
-            ,district_id AS business_area_id
-            ,district_name AS business_area_name
-            ,area_id AS bd_area_id
-            ,area_name AS bd_area_name
-            ,shop_id
-            ,shop_name
-            ,IF(
-                is_dark_kitchen = 1
-                ,'DK'
-                ,IF(
-                    business_type = 3,
-                    'Groceries'
-                    ,IF(
-                        ka_type = 'normal'
-                        ,'SME'
-                        ,UPPER(ka_type)
-                    )
-                ) 
-            ) AS ka_type
-            ,area_maintainer AS bd_area_owner
-            ,bd_user_name_extract AS shop_assigned_bd
-            FROM soda_international_dwm.dwm_bizopp_wide_d_whole
-            WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
-            AND country_code IN ('MX','CO','CR','PE')
-            --Filtro de Firmados
-            AND is_didi_sign = 1
-            -- Filtro de KA Type
-            AND IF(
-                is_dark_kitchen = 1
-                ,'DK'
-                ,IF(
-                    business_type = 3,
-                    'Groceries'
-                    ,IF(
-                        ka_type = 'normal'
-                        ,'SME'
-                        ,UPPER(ka_type)
-                    )
-                ) 
-            ) = 'SME'
-            --Filtro de Prioridades
-            AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
-        ) AS a
+        ,a.bd_area_owner
+        ,a.shops_x_bd_total
+        ,b.shops_x_city
+        ,b.bds_x_city
+        ,b.avg_shops_x_bd_x_city
+        ,b.lim_superior
+        ,b.lim_inferior
 
-        JOIN (              
-            --Solo las áreas que tenemos identificadas
-            SELECT
-            country
-            ,CONCAT("bdArea|",SUBSTR(bd_area_id, 2)) as bd_area_id
-            ,correct_bd_area_owner
-            FROM dp_det_data.bd_area_owner_sme_202406   --Tabla Offine
-        ) AS b
-        ON a.country = b.country AND a.bd_area_id = b.bd_area_id
-        GROUP BY a.stat_date,a.country,a.city,b.correct_bd_area_owner
+        ,IF(a.shops_x_bd_total > b.lim_superior,1,0) AS over_range
+        ,IF(a.shops_x_bd_total < b.lim_inferior,1,0) AS under_range
+        ,IF(a.shops_x_bd_total >= b.lim_inferior AND a.shops_x_bd_total <= b.lim_superior,1,0) on_range
+
+        FROM (
+            SELECT 
+            MONTH(a.stat_date) AS month_
+            ,a.country
+            ,a.city
+            ,a.bd_area_owner
+            ,COUNT(DISTINCT(a.shop_id)) AS shops_x_bd_total
+            FROM (
+                SELECT DISTINCT
+                concat_ws('-', year, month, day) AS stat_date
+                ,country_code AS country
+                ,city_id
+                ,city_name AS city
+                ,district_id AS business_area_id
+                --,district_name AS business_area_name
+                ,area_id AS bd_area_id
+                ,area_name AS bd_area_name
+                ,shop_id
+                ,shop_name
+                ,priority
+                ,area_maintainer AS bd_area_owner
+                ,bd_user_name_extract AS shop_assigned_bd
+                FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+                WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                --Filtro de omitir primeros días del mes por cambios
+                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND country_code IN ('MX','CO','CR','PE')
+                --Filtro de Firmados
+                AND is_didi_sign = 1
+                -- Filtro de KA Type
+                AND IF(
+                    is_dark_kitchen = 1
+                    ,'DK'
+                    ,IF(
+                        business_type = 3,
+                        'Groceries'
+                        ,IF(
+                            ka_type = 'normal'
+                            ,'SME'
+                            ,UPPER(ka_type)
+                        )
+                    ) 
+                ) = 'SME'
+                --Filtro BD asignado = BD Area Owner
+                AND bd_user_name_extract = area_maintainer
+                --Filtro de Prioridades
+                AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+            ) AS a
+            JOIN(
+                SELECT DISTINCT
+                a.stat_date
+                ,a.country_code AS country
+                ,a.bd
+                FROM (
+                    SELECT  
+                    concat_ws('-', year, month, day) AS stat_date
+                    ,country_code
+                    ,id
+                    ,user_id
+                    ,username AS bd
+                    ,full_name
+                    ,IF(
+                        coordinator = ''
+                        ,superior
+                        ,coordinator
+                    ) AS bdm
+                    FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+                    WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                    AND DAY(concat_ws('-', year, month, day)) > 25
+                    AND country_code IN ('MX','CO','CR','PE')
+                    AND user_status NOT IN (1,4,6)
+                    AND job_role IN (2,4)
+                ) AS a
+            ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+            GROUP BY MONTH(a.stat_date),a.country,a.city,a.bd_area_owner
+        ) AS a
+        JOIN(
+            SELECT 
+            MONTH(a.stat_date) AS month_
+            ,a.country
+            ,a.city
+            ,COUNT(DISTINCT(a.shop_id)) AS shops_x_city
+            ,COUNT(DISTINCT(a.bd_area_owner)) AS bds_x_city
+            ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner)) AS avg_shops_x_bd_x_city
+
+            ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))*1.4 AS lim_superior
+            ,COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))-(COUNT(DISTINCT(a.shop_id))/COUNT(DISTINCT(a.bd_area_owner))*0.4) AS lim_inferior
+
+            FROM (
+                SELECT DISTINCT
+                concat_ws('-', year, month, day) AS stat_date
+                ,country_code AS country
+                ,city_id
+                ,city_name AS city
+                ,district_id AS business_area_id
+                --,district_name AS business_area_name
+                ,area_id AS bd_area_id
+                ,area_name AS bd_area_name
+                ,shop_id
+                ,shop_name
+                ,priority
+                ,area_maintainer AS bd_area_owner
+                ,bd_user_name_extract AS shop_assigned_bd
+                FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+                WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                --Filtro de omitir primeros días del mes por cambios
+                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND country_code IN ('MX','CO','CR','PE')
+                --Filtro de Firmados
+                AND is_didi_sign = 1
+                -- Filtro de KA Type
+                AND IF(
+                    is_dark_kitchen = 1
+                    ,'DK'
+                    ,IF(
+                        business_type = 3,
+                        'Groceries'
+                        ,IF(
+                            ka_type = 'normal'
+                            ,'SME'
+                            ,UPPER(ka_type)
+                        )
+                    ) 
+                ) = 'SME'
+                --Filtro BD asignado = BD Area Owner
+                AND bd_user_name_extract = area_maintainer
+                --Filtro de Prioridades
+                AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+            ) AS a
+            JOIN(
+                SELECT DISTINCT
+                a.stat_date
+                ,a.country_code AS country
+                ,a.bd
+                FROM (
+                    SELECT  
+                    concat_ws('-', year, month, day) AS stat_date
+                    ,country_code
+                    ,id
+                    ,user_id
+                    ,username AS bd
+                    ,full_name
+                    ,IF(
+                        coordinator = ''
+                        ,superior
+                        ,coordinator
+                    ) AS bdm
+                    FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+                    WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
+                    AND DAY(concat_ws('-', year, month, day)) > 25
+                    AND country_code IN ('MX','CO','CR','PE')
+                    AND user_status NOT IN (1,4,6)
+                    AND job_role IN (2,4)
+                ) AS a
+            ) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+            GROUP BY MONTH(a.stat_date),a.country,a.city
+        ) AS b ON a.month_ = b.month_ AND a.country = b.country AND a.city = b.city
     ) AS a 
-    LEFT JOIN(
-        SELECT
-        a.stat_date
-        ,a.country
-        ,a.city
-        ,COUNT(DISTINCT(b.correct_bd_area_owner)) AS bds_x_city
-        ,COUNT(a.shop_id) AS shops_x_city
-        ,COUNT(a.shop_id)/COUNT(DISTINCT(b.correct_bd_area_owner)) AS avg_shops_bd_x_city
-        FROM (
-            SELECT
-            concat_ws('-', year, month, day) AS stat_date
-            ,country_code AS country
-            ,city_id
-            ,city_name AS city
-            ,district_id AS business_area_id
-            ,district_name AS business_area_name
-            ,area_id AS bd_area_id
-            ,area_name AS bd_area_name
-            ,shop_id
-            ,shop_name
-            ,IF(
-                is_dark_kitchen = 1
-                ,'DK'
-                ,IF(
-                    business_type = 3,
-                    'Groceries'
-                    ,IF(
-                        ka_type = 'normal'
-                        ,'SME'
-                        ,UPPER(ka_type)
-                    )
-                ) 
-            ) AS ka_type
-            ,area_maintainer AS bd_area_owner
-            ,bd_user_name_extract AS shop_assigned_bd
-            FROM soda_international_dwm.dwm_bizopp_wide_d_whole
-            WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
-            AND country_code IN ('MX','CO','CR','PE')
-            --Filtro de Firmados
-            AND is_didi_sign = 1
-            -- Filtro de KA Type
-            AND IF(
-                is_dark_kitchen = 1
-                ,'DK'
-                ,IF(
-                    business_type = 3,
-                    'Groceries'
-                    ,IF(
-                        ka_type = 'normal'
-                        ,'SME'
-                        ,UPPER(ka_type)
-                    )
-                ) 
-            ) = 'SME'
-            --Filtro de Prioridades
-            AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
-        ) AS a
-
-        JOIN (              
-            --Solo las áreas que tenemos identificadas
-            SELECT
-            country
-            ,CONCAT("bdArea|",SUBSTR(bd_area_id, 2)) as bd_area_id
-            ,correct_bd_area_owner
-            FROM dp_det_data.bd_area_owner_sme_202406   --Tabla Offine
-        ) AS b
-        ON a.country = b.country AND a.bd_area_id = b.bd_area_id
-        GROUP BY a.stat_date,a.country,a.city
-    ) AS b ON a.stat_date = b.stat_date AND a.country = b.country AND a.city = b.city
-) AS b on a.MONTH_ = b.MONTH_ AND a.country = b.country AND a.city = b.city;
+    GROUP BY a.month_,a.country,a.city
+) AS d ON a.month_ = d.month_ AND a.country = d.country AND a.city = d.city;
