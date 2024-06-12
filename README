@@ -20,3 +20,9 @@ WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
 Fecha más reciente
 No usa tablas offline
 Actualización: Automática
+
+--SME Portfolio--
+WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
+Fecha más reciente
+No usa tablas offline
+Actualización: Automática
