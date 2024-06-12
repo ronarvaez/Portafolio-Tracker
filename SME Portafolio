@@ -1,0 +1,106 @@
+SELECT 
+a.stat_date
+,a.country
+,a.city
+,a.business_area_id
+,a.bd_area_id
+,a.bd_area_name
+,a.shop_id
+,a.shop_name
+,a.potential
+,a.r_performance
+,a.priority
+,a.bd_area_owner
+,b.bdm
+,c.average_daily_orders_l60d
+,t.average_daily_orders_Month
+FROM (
+    SELECT DISTINCT
+    concat_ws('-', year, month, day) AS stat_date
+    ,country_code AS country
+    ,city_id
+    ,city_name AS city
+    ,district_id AS business_area_id
+    --,district_name AS business_area_name
+    ,area_id AS bd_area_id
+    ,area_name AS bd_area_name
+    ,shop_id
+    ,shop_name
+    ,priority
+    ,potential
+    ,r_performance
+    ,area_maintainer AS bd_area_owner
+    ,bd_user_name_extract AS shop_assigned_bd
+    ,null as test
+    FROM soda_international_dwm.dwm_bizopp_wide_d_whole
+    WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
+    AND country_code IN ('MX','CO','CR','PE')
+    --Filtro de Firmados
+    AND is_didi_sign = 1
+    -- Filtro de KA Type
+    AND IF(
+        is_dark_kitchen = 1
+        ,'DK'
+        ,IF(
+            business_type = 3,
+            'Groceries'
+            ,IF(
+                ka_type = 'normal'
+                ,'SME'
+                ,UPPER(ka_type)
+            )
+        ) 
+    ) = 'SME'
+    --Filtro BD asignado = BD Area Owner
+    AND bd_user_name_extract = area_maintainer
+    --Filtro de Prioridades
+    AND INT(SUBSTR(priority,-1)) IN (1,2,3,4)
+) AS a
+JOIN(
+    SELECT DISTINCT
+    a.stat_date
+    ,a.country_code AS country
+    ,a.bd
+    ,a.bdm
+    FROM (
+        SELECT  
+        concat_ws('-', year, month, day) AS stat_date
+        ,country_code
+        ,id
+        ,user_id
+        ,username AS bd
+        ,full_name
+        ,IF(
+            coordinator = ''
+            ,superior
+            ,coordinator
+        ) AS bdm
+        FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
+        WHERE concat_ws('-', year, month, day) = '$[YYYY-MM-DD - 2D]'
+        AND country_code IN ('MX','CO','CR','PE')
+        AND user_status NOT IN (1,4,6)
+        AND job_role IN (2,4)
+    ) AS a
+) AS b ON a.bd_area_owner = b.bd AND a.stat_date = b.stat_date AND a.country = b.country
+
+LEFT JOIN (
+    SELECT
+    shop_id
+    ,ROUND(SUM(complete_order_num)/COUNT(DISTINCT concat_ws('-', year, month, day)),2) AS average_daily_orders_l60d
+    FROM soda_international_dwm.dwm_shop_wide_d_whole
+    WHERE country_code IN ('MX','CO','CR','PE')
+    AND concat_ws('-', year, month, day) BETWEEN DATE_SUB('$[YYYY-MM-DD - 2D]',60) AND '$[YYYY-MM-DD - 2D]'
+    GROUP BY shop_id
+) AS c
+ON a.shop_id = c.shop_id
+
+LEFT JOIN (
+    SELECT
+    shop_id
+    ,ROUND(SUM(complete_order_num)/COUNT(DISTINCT concat_ws('-', year, month, day)),2) AS average_daily_orders_Month
+    FROM soda_international_dwm.dwm_shop_wide_d_whole
+    WHERE country_code IN ('MX','CO','CR','PE')
+    AND concat_ws('-', year, month, day) BETWEEN DATE_SUB('$[YYYY-MM-DD - 2D]', DAY('$[YYYY-MM-DD - 2D]')-1) AND '$[YYYY-MM-DD - 2D]'
+    GROUP BY shop_id
+) AS t
+ON a.shop_id = t.shop_id;
