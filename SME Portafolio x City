@@ -58,7 +58,7 @@ FROM (
         FROM soda_international_dwm.dwm_bizopp_wide_d_whole
         WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
         --Filtro de omitir primeros días del mes por cambios
-        AND DAY(concat_ws('-', year, month, day)) > 25
+        AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
         AND country_code IN ('MX','CO','CR','PE')
         --Filtro de Firmados
         AND is_didi_sign = 1
@@ -101,7 +101,7 @@ FROM (
             ) AS bdm
             FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
             WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
             AND country_code IN ('MX','CO','CR','PE')
             AND user_status NOT IN (1,4,6)
             AND job_role IN (2,4)
@@ -135,7 +135,7 @@ JOIN(
         FROM soda_international_dwm.dwm_bizopp_wide_d_whole
         WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
         --Filtro de omitir primeros días del mes por cambios
-        AND DAY(concat_ws('-', year, month, day)) > 25
+        AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
         AND country_code IN ('MX','CO','CR','PE')
         --Filtro de Firmados
         AND is_didi_sign = 1
@@ -178,7 +178,7 @@ JOIN(
             ) AS bdm
             FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
             WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
             AND country_code IN ('MX','CO','CR','PE')
             AND user_status NOT IN (1,4,6)
             AND job_role IN (2,4)
@@ -229,7 +229,7 @@ JOIN(
             FROM soda_international_dwm.dwm_bizopp_wide_d_whole
             WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
             --Filtro de omitir primeros días del mes por cambios
-            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
             AND country_code IN ('MX','CO','CR','PE')
             --Filtro de Firmados
             AND is_didi_sign = 1
@@ -272,7 +272,7 @@ JOIN(
                 ) AS bdm
                 FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
                 WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                 AND country_code IN ('MX','CO','CR','PE')
                 AND user_status NOT IN (1,4,6)
                 AND job_role IN (2,4)
@@ -310,7 +310,7 @@ JOIN(
             FROM soda_international_dwm.dwm_bizopp_wide_d_whole
             WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
             --Filtro de omitir primeros días del mes por cambios
-            AND DAY(concat_ws('-', year, month, day)) > 25
+            AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
             AND country_code IN ('MX','CO','CR','PE')
             --Filtro de Firmados
             AND is_didi_sign = 1
@@ -353,7 +353,7 @@ JOIN(
                 ) AS bdm
                 FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
                 WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                 AND country_code IN ('MX','CO','CR','PE')
                 AND user_status NOT IN (1,4,6)
                 AND job_role IN (2,4)
@@ -422,7 +422,7 @@ JOIN(
                 FROM soda_international_dwm.dwm_bizopp_wide_d_whole
                 WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
                 --Filtro de omitir primeros días del mes por cambios
-                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                 AND country_code IN ('MX','CO','CR','PE')
                 --Filtro de Firmados
                 AND is_didi_sign = 1
@@ -465,7 +465,7 @@ JOIN(
                     ) AS bdm
                     FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
                     WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-                    AND DAY(concat_ws('-', year, month, day)) > 25
+                    AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                     AND country_code IN ('MX','CO','CR','PE')
                     AND user_status NOT IN (1,4,6)
                     AND job_role IN (2,4)
@@ -503,7 +503,7 @@ JOIN(
                 FROM soda_international_dwm.dwm_bizopp_wide_d_whole
                 WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
                 --Filtro de omitir primeros días del mes por cambios
-                AND DAY(concat_ws('-', year, month, day)) > 25
+                AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                 AND country_code IN ('MX','CO','CR','PE')
                 --Filtro de Firmados
                 AND is_didi_sign = 1
@@ -546,7 +546,7 @@ JOIN(
                     ) AS bdm
                     FROM soda_international_dwd.dwd_shop_bd_user_info_d_whole bd
                     WHERE concat_ws('-', year, month, day) BETWEEN '2024-01-01' AND '$[YYYY-MM-DD - 2D]'
-                    AND DAY(concat_ws('-', year, month, day)) > 25
+                    AND DAY(concat_ws('-', year, month, day)) > IF(MONTH(concat_ws('-', year, month, day)) = 6, DAY('$[YYYY-MM-DD - 3D]'), 25)
                     AND country_code IN ('MX','CO','CR','PE')
                     AND user_status NOT IN (1,4,6)
                     AND job_role IN (2,4)
