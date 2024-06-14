@@ -27,6 +27,10 @@ a.month_
 ,d.p_under_range
 ,d.p_on_range
 
+,d.max_shops_x_bd AS max_shops_x_bd_x_city
+,d.min_shops_x_bd AS min_shops_x_bd_x_city
+,d.max_shops_x_bd - d.min_shops_x_bd AS diff_max_min_shops_x_bd_x_city
+
 FROM (   
     SELECT 
     MONTH(a.stat_date) AS month_
@@ -372,6 +376,9 @@ JOIN(
     ,SUM(a.over_range)/AVG(a.bds_x_city) AS p_over_range
     ,SUM(a.under_range)/AVG(a.bds_x_city) AS p_under_range
     ,SUM(a.on_range)/AVG(a.bds_x_city) AS p_on_range
+
+    ,MAX(a.shops_x_bd_total) AS max_shops_x_bd
+    ,MIN(a.shops_x_bd_total) AS min_shops_x_bd
 
     FROM (
         SELECT 
